@@ -26,8 +26,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    padding: 20px;
+    justify-content: center;
+    padding: 2vh 2vw;
     overflow-x: hidden;
   }
 
@@ -61,19 +61,19 @@
   /* 헤더 */
   .header {
     text-align: center;
-    margin-bottom: 24px;
+    margin-bottom: 14px;
     position: relative;
     z-index: 1;
   }
   .header h1 {
-    font-size: clamp(28px, 6vw, 48px);
+    font-size: clamp(28px, 4vw, 44px);
     color: #fff;
     text-shadow: 3px 3px 0 #4A90A4, 5px 5px 10px rgba(0,0,0,0.2);
     letter-spacing: 2px;
-    line-height: 1.3;
+    line-height: 1.2;
   }
   .header .subtitle {
-    font-size: clamp(14px, 3vw, 20px);
+    font-size: clamp(14px, 2vw, 20px);
     color: #FFD93D;
     text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
     margin-top: 4px;
@@ -82,14 +82,14 @@
   /* 진행 표시 */
   .progress-bar {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     z-index: 1;
     position: relative;
   }
   .progress-dot {
-    width: 18px; height: 18px;
+    width: 22px; height: 22px;
     border-radius: 50%;
     background: rgba(255,255,255,0.4);
     border: 2px solid white;
@@ -102,32 +102,54 @@
   .quiz-card {
     background: var(--card-bg);
     border-radius: 32px;
-    padding: 36px 32px 32px;
+    padding: 32px 48px;
     width: 100%;
-    max-width: 520px;
+    max-width: 1100px;
     box-shadow: 0 8px 32px var(--shadow), 0 2px 0 rgba(255,255,255,0.8) inset;
     position: relative;
     z-index: 1;
     text-align: center;
   }
 
+  /* 가로 2단: 왼쪽 스피커/버튼, 오른쪽 질문/보기 */
+  .quiz-body {
+    display: flex;
+    align-items: center;
+    gap: 48px;
+  }
+  .quiz-left {
+    flex: 0 0 40%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+  .quiz-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
   .question-num {
-    font-size: 14px;
+    font-size: 18px;
     color: #aaa;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
 
   /* 이모지 아이콘 영역 */
   .sound-stage {
     position: relative;
-    height: 130px;
-    margin: 10px 0 16px;
+    height: 180px;
+    width: 180px;
+    margin: 0;
     display: flex;
     align-items: center;
     justify-content: center;
   }
   .sound-icon {
-    font-size: 80px;
+    font-size: 110px;
     display: block;
     line-height: 1;
     position: relative;
@@ -194,11 +216,21 @@
     100% { background: rgba(255,80,80,0); opacity: 0; }
   }
 
+  /* 세로로 긴 화면(태블릿 세로 등)에서는 다시 세로로 쌓기 */
+  @media (max-aspect-ratio: 1/1) {
+    .quiz-body { flex-direction: column; gap: 20px; }
+    .quiz-left { flex: none; }
+    .quiz-right { width: 100%; }
+    .reveal-card { flex-direction: column; gap: 24px; }
+    .reveal-drawing { width: min(40vw, 300px); height: min(40vw, 300px); }
+    .reveal-place-emoji { font-size: min(30vw, 220px); }
+  }
+
   .question-text {
-    font-size: clamp(20px, 4vw, 26px);
+    font-size: clamp(24px, 2.5vw, 34px);
     color: #333;
-    margin-bottom: 28px;
-    line-height: 1.5;
+    margin-bottom: 4px;
+    line-height: 1.4;
   }
 
   /* 재생 버튼 */
@@ -207,16 +239,16 @@
     color: white;
     border: none;
     border-radius: 50px;
-    padding: 16px 40px;
+    padding: 20px 48px;
     font-family: 'Jua', sans-serif;
-    font-size: 22px;
+    font-size: 28px;
     cursor: pointer;
     box-shadow: 0 6px 20px rgba(255,107,107,0.4);
     transition: all 0.2s;
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 28px;
+    margin-bottom: 0;
   }
   .play-btn:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(255,107,107,0.5); }
   .play-btn:active { transform: scale(0.97); }
@@ -226,15 +258,15 @@
   .choices {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 16px;
   }
   .choice-btn {
     background: white;
     border: 3px solid #E8E0FF;
     border-radius: 20px;
-    padding: 22px 10px;
+    padding: 28px 14px;
     font-family: 'Jua', sans-serif;
-    font-size: clamp(20px, 4.5vw, 28px);
+    font-size: clamp(24px, 2.6vw, 36px);
     color: #444;
     cursor: pointer;
     transition: all 0.2s;
@@ -279,34 +311,52 @@
   .reveal-card {
     background: white;
     border-radius: 36px;
-    padding: 48px 48px 40px;
+    padding: 40px 56px;
     text-align: center;
-    max-width: 400px;
-    width: 90%;
+    max-width: 1100px;
+    width: 92%;
     animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
     position: relative;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 56px;
   }
   @keyframes popIn {
     0% { transform: scale(0.5); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
   }
+  .reveal-left {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .reveal-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
 
   .reveal-drawing {
-    width: 200px;
-    height: 200px;
+    width: min(46vh, 420px);
+    height: min(46vh, 420px);
     object-fit: contain;
-    border-radius: 24px;
-    margin-bottom: 16px;
-    border: 4px solid #FFE08A;
+    border-radius: 28px;
+    margin-bottom: 0;
+    border: 6px solid #FFE08A;
     background: #fff;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.15);
     animation: spinIn 0.6s ease;
   }
   .reveal-place-emoji {
-    font-size: 100px;
+    font-size: min(40vh, 320px);
     display: block;
-    margin-bottom: 12px;
+    margin-bottom: 0;
+    line-height: 1;
     animation: spinIn 0.6s ease;
   }
   @keyframes spinIn {
@@ -315,15 +365,15 @@
   }
 
   .reveal-correct-text {
-    font-size: 26px;
+    font-size: 34px;
     color: #6BCB77;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
   }
   .reveal-sound-word {
-    font-size: 48px;
+    font-size: clamp(48px, 6vw, 84px);
     color: #FF6B6B;
-    margin-bottom: 10px;
-    letter-spacing: 2px;
+    margin-bottom: 14px;
+    letter-spacing: 3px;
     animation: wordPop 0.5s cubic-bezier(0.34,1.56,0.64,1);
   }
   @keyframes wordPop {
@@ -331,9 +381,9 @@
     100% { transform: scale(1); opacity: 1; }
   }
   .reveal-place-name {
-    font-size: 26px;
+    font-size: 34px;
     color: #888;
-    margin-bottom: 28px;
+    margin-bottom: 32px;
   }
 
   .next-btn {
@@ -341,9 +391,9 @@
     color: white;
     border: none;
     border-radius: 50px;
-    padding: 16px 48px;
+    padding: 20px 56px;
     font-family: 'Jua', sans-serif;
-    font-size: 22px;
+    font-size: 28px;
     cursor: pointer;
     box-shadow: 0 6px 20px rgba(124,58,237,0.4);
     transition: all 0.2s;
@@ -410,7 +460,7 @@
 <div class="flash-overlay" id="flashOverlay"></div>
 
 <div class="header">
-  <h1>🏘️ 우리 동네<br>소리 퀴즈</h1>
+  <h1>🏘️ 우리 동네 소리 퀴즈</h1>
   <div class="subtitle">어떤 소리일까요? 🎵</div>
 </div>
 
@@ -418,17 +468,23 @@
 
 <div class="quiz-card" id="quizCard">
   <div class="question-num" id="questionNum"></div>
-  <div class="sound-stage" id="soundStage">
-    <div class="wave-ring"></div>
-    <div class="wave-ring"></div>
-    <div class="wave-ring"></div>
-    <span class="sound-icon idle" id="soundIcon">🔊</span>
+  <div class="quiz-body">
+    <div class="quiz-left">
+      <div class="sound-stage" id="soundStage">
+        <div class="wave-ring"></div>
+        <div class="wave-ring"></div>
+        <div class="wave-ring"></div>
+        <span class="sound-icon idle" id="soundIcon">🔊</span>
+      </div>
+      <button class="play-btn" id="playBtn" onclick="playSound()">
+        <span id="playBtnIcon">▶</span> 소리 듣기
+      </button>
+    </div>
+    <div class="quiz-right">
+      <div class="question-text">이 소리는 무슨 소리일까요?</div>
+      <div class="choices" id="choices"></div>
+    </div>
   </div>
-  <div class="question-text">이 소리는<br>무슨 소리일까요?</div>
-  <button class="play-btn" id="playBtn" onclick="playSound()">
-    <span id="playBtnIcon">▶</span> 소리 듣기
-  </button>
-  <div class="choices" id="choices"></div>
 </div>
 
 <div class="result-screen" id="resultScreen">
@@ -444,12 +500,16 @@
 <div class="reveal-overlay" id="revealOverlay">
   <div class="confetti-container" id="confettiContainer"></div>
   <div class="reveal-card">
-    <img class="reveal-drawing" id="revealDrawing" alt="" style="display:none;">
-    <span class="reveal-place-emoji" id="revealEmoji"></span>
-    <div class="reveal-correct-text" id="revealCorrectText"></div>
-    <div class="reveal-sound-word" id="revealSoundWord"></div>
-    <div class="reveal-place-name" id="revealName"></div>
-    <button class="next-btn" onclick="nextQuestion()">다음 문제 ➡️</button>
+    <div class="reveal-left">
+      <img class="reveal-drawing" id="revealDrawing" alt="" style="display:none;">
+      <span class="reveal-place-emoji" id="revealEmoji"></span>
+    </div>
+    <div class="reveal-right">
+      <div class="reveal-correct-text" id="revealCorrectText"></div>
+      <div class="reveal-sound-word" id="revealSoundWord"></div>
+      <div class="reveal-place-name" id="revealName"></div>
+      <button class="next-btn" onclick="nextQuestion()">다음 문제 ➡️</button>
+    </div>
   </div>
 </div>
 
@@ -579,6 +639,19 @@ const SOUND_EXTS = ['mp3', 'wav', 'ogg', 'm4a']; // 어떤 형식이든 자동 �
 const audioCache = {};   // id -> HTMLAudioElement (한번 찾은 파일 기억)
 const fileMissing = {};  // id -> true (파일 없는 게 확인되면 다시 안 찾음)
 
+let currentAudio = null;     // 지금 재생 중인 오디오
+let stopTimer = null;        // 10초 정지 타이머
+const MAX_PLAY_SEC = 10;     // 최대 재생 시간(초)
+
+// 재생 중인 소리를 모두 멈춤 (이전 소리 겹침 방지)
+function stopAllSounds() {
+  if (currentAudio) {
+    try { currentAudio.pause(); currentAudio.currentTime = 0; } catch(e) {}
+    currentAudio = null;
+  }
+  if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
+}
+
 // 특정 확장자 파일이 실제로 재생 가능한지 확인하며 Audio 객체를 준비
 function tryLoadAudio(id) {
   return new Promise((resolve) => {
@@ -603,16 +676,28 @@ function tryLoadAudio(id) {
   });
 }
 
+// 오디오를 처음부터 재생하고 10초 후 자동 정지
+function startAudio(audio) {
+  stopAllSounds();           // 이전 소리 먼저 멈춤
+  currentAudio = audio;
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+  // 10초 지나면 자동 정지
+  stopTimer = setTimeout(() => {
+    try { audio.pause(); audio.currentTime = 0; } catch(e) {}
+  }, MAX_PLAY_SEC * 1000);
+}
+
 // 소리 재생: 파일이 있으면 파일, 없으면 합성음
 async function playQuizSound(id) {
+  stopAllSounds();   // 어떤 경우든 이전 소리부터 정지
+
   // 이미 파일 없는 걸로 확인됐으면 바로 합성음
   if (fileMissing[id]) { soundMakers[id](getCtx()); return; }
 
   // 캐시에 있으면 그대로 재생
   if (audioCache[id]) {
-    const a = audioCache[id];
-    a.currentTime = 0;
-    a.play().catch(() => soundMakers[id](getCtx()));
+    startAudio(audioCache[id]);
     return;
   }
 
@@ -620,7 +705,7 @@ async function playQuizSound(id) {
   const audio = await tryLoadAudio(id);
   if (audio) {
     audioCache[id] = audio;
-    audio.play().catch(() => soundMakers[id](getCtx()));
+    startAudio(audio);
   } else {
     fileMissing[id] = true;       // 다음부턴 합성음 사용
     soundMakers[id](getCtx());
@@ -977,6 +1062,7 @@ function launchConfetti() {
 }
 
 function nextQuestion() {
+  stopAllSounds();   // 넘어갈 때 소리 정지
   document.getElementById('revealOverlay').classList.remove('show');
 
   // 진행 도트 업데이트
