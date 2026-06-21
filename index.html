@@ -617,7 +617,7 @@
 <div class="result-screen" id="resultScreen">
   <div class="result-card">
     <span class="result-emoji" id="resultEmoji">🎉</span>
-    <div class="result-title">퀴즈 끝!</div>
+    <div class="result-title">축하합니다!!</div>
     <div class="result-score" id="resultScore"></div>
     <button class="restart-btn" onclick="restart()">다시 하기 🔄</button>
   </div>
@@ -1276,15 +1276,8 @@ function showResult() {
   document.getElementById('quizCard').style.display = 'none';
   const rs = document.getElementById('resultScreen');
   rs.classList.add('show');
-  const pct = score / quizData.length;
-  let emoji = '🌟';
-  let msg = '';
-  if (pct === 1) { emoji = '🏆'; msg = '완벽해요! 우리 동네 소리 박사!'; }
-  else if (pct >= 0.7) { emoji = '🎉'; msg = '정말 잘했어요!'; }
-  else if (pct >= 0.5) { emoji = '😊'; msg = '잘했어요! 다시 해봐요!'; }
-  else { emoji = '💪'; msg = '소리를 더 들어봐요!'; }
-  document.getElementById('resultEmoji').textContent = emoji;
-  document.getElementById('resultScore').textContent = `${quizData.length}문제 중 ${score}개 맞혔어요!\n${msg}`;
+  document.getElementById('resultEmoji').textContent = '🏆';
+  document.getElementById('resultScore').textContent = `${quizData.length}문제 중 ${score}개 맞혔어요!`;
   launchConfetti();
 }
 
