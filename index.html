@@ -555,13 +555,34 @@
 
 <!-- 인트로 화면 -->
 <div class="intro-screen" id="introScreen">
-  <img class="intro-image" id="introImage" src="images/intro.png" alt="우리 동네 소리 퀴즈"
-       onerror="this.style.display='none'; document.getElementById('introFallback').style.display='block';">
+  <img class="intro-image" id="introImage" alt="우리 동네 소리 퀴즈" style="display:none;">
   <div class="intro-fallback" id="introFallback" style="display:none;">🏘️🎵</div>
   <button class="start-btn" onclick="startQuiz()">
     퀴즈 시작하기 <span class="start-arrow">▶</span>
   </button>
 </div>
+
+<script>
+// 인트로 이미지를 여러 확장자로 자동 탐색 (png, jpg 등)
+(function loadIntroImage() {
+  const exts = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+  const img = document.getElementById('introImage');
+  const fallback = document.getElementById('introFallback');
+  let i = 0;
+  function tryNext() {
+    if (i >= exts.length) {           // 다 실패하면 이모지
+      img.style.display = 'none';
+      fallback.style.display = 'block';
+      return;
+    }
+    const test = new Image();
+    test.onload = () => { img.src = test.src; img.style.display = 'block'; };
+    test.onerror = () => { i++; tryNext(); };
+    test.src = 'images/intro.' + exts[i];
+  }
+  tryNext();
+})();
+</script>
 
 <!-- 퀴즈 화면 (처음엔 숨김) -->
 <div class="quiz-screen" id="quizScreen" style="display:none;">
