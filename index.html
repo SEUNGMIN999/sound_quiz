@@ -226,6 +226,35 @@
     .reveal-place-emoji { font-size: min(30vw, 220px); }
   }
 
+  /* 다시 듣기 토스트 */
+  .retry-toast {
+    position: fixed;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-30px);
+    background: linear-gradient(135deg, #FF8E53, #FF6B6B);
+    color: white;
+    font-size: clamp(22px, 2.4vw, 32px);
+    padding: 18px 40px;
+    border-radius: 50px;
+    box-shadow: 0 8px 28px rgba(255,107,107,0.45);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    white-space: nowrap;
+  }
+  .retry-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    animation: toastWiggle 0.5s ease;
+  }
+  @keyframes toastWiggle {
+    0%, 100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+    25% { transform: translateX(-50%) translateY(0) rotate(-2deg); }
+    75% { transform: translateX(-50%) translateY(0) rotate(2deg); }
+  }
+
   .question-text {
     font-size: clamp(24px, 2.5vw, 34px);
     color: #333;
@@ -458,6 +487,7 @@
 <div class="cloud cloud1"></div>
 <div class="cloud cloud2"></div>
 <div class="flash-overlay" id="flashOverlay"></div>
+<div class="retry-toast" id="retryToast">🔔 다시 한번 들어보세요!</div>
 
 <div class="header">
   <h1>🏘️ 우리 동네 소리 퀴즈</h1>
@@ -477,7 +507,7 @@
         <span class="sound-icon idle" id="soundIcon">🔊</span>
       </div>
       <button class="play-btn" id="playBtn" onclick="playSound()">
-        <span id="playBtnIcon">▶</span> 소리 듣기
+        <span id="playBtnIcon">▶</span> <span id="playBtnText">소리 듣기</span>
       </button>
     </div>
     <div class="quiz-right">
@@ -682,9 +712,12 @@ function startAudio(audio) {
   currentAudio = audio;
   audio.currentTime = 0;
   audio.play().catch(() => {});
+  // 소리가 자연스럽게 끝나면 UI도 정지 상태로
+  audio.onended = () => { if (typeof stopSoundUI === 'function') stopSoundUI(); };
   // 10초 지나면 자동 정지
   stopTimer = setTimeout(() => {
     try { audio.pause(); audio.currentTime = 0; } catch(e) {}
+    if (typeof stopSoundUI === 'function') stopSoundUI();
   }, MAX_PLAY_SEC * 1000);
 }
 
@@ -693,7 +726,7 @@ async function playQuizSound(id) {
   stopAllSounds();   // 어떤 경우든 이전 소리부터 정지
 
   // 이미 파일 없는 걸로 확인됐으면 바로 합성음
-  if (fileMissing[id]) { soundMakers[id](getCtx()); return; }
+  if (fileMissing[id]) { soundMakers[id](getCtx()); fallbackStopUI(); return; }
 
   // 캐시에 있으면 그대로 재생
   if (audioCache[id]) {
@@ -709,7 +742,16 @@ async function playQuizSound(id) {
   } else {
     fileMissing[id] = true;       // 다음부턴 합성음 사용
     soundMakers[id](getCtx());
+    fallbackStopUI();
   }
+}
+
+// 합성음은 길이가 짧으니 약 2.5초 후 스피커 애니메이션 정지
+function fallbackStopUI() {
+  if (stopTimer) clearTimeout(stopTimer);
+  stopTimer = setTimeout(() => {
+    if (typeof stopSoundUI === 'function') stopSoundUI();
+  }, 2500);
 }
 
 const quizData = [
@@ -719,7 +761,7 @@ const quizData = [
     placeEmoji: '🚑',
     placeName: '구급차',
     icon: '🚨',
-    anim: 'flash',
+    anim: 'wave',
     choices: [
       { text: '삐뽀삐뽀' },
       { text: '멍멍' },
@@ -833,6 +875,8 @@ function renderQuestion() {
   const playBtn = document.getElementById('playBtn');
   playBtn.classList.remove('playing');
   document.getElementById('playBtnIcon').textContent = '▶';
+  document.getElementById('playBtnText').textContent = '소리 듣기';
+  isPlaying = false;
 
   const choicesEl = document.getElementById('choices');
   choicesEl.innerHTML = '';
@@ -845,31 +889,52 @@ function renderQuestion() {
   });
 }
 
+let isPlaying = false;   // 현재 재생 상태
+
 function playSound() {
+  if (isPlaying) {
+    stopSoundUI();   // 재생 중이면 정지
+  } else {
+    startSoundUI();  // 정지 상태면 재생
+  }
+}
+
+function startSoundUI() {
   const q = quizData[currentQ];
+  isPlaying = true;
+
   playQuizSound(q.id);   // 파일 있으면 파일, 없으면 합성음 자동
 
   const btn = document.getElementById('playBtn');
   btn.classList.add('playing');
-  document.getElementById('playBtnIcon').textContent = '🔊';
+  document.getElementById('playBtnIcon').textContent = '⏸';
+  document.getElementById('playBtnText').textContent = '정지';
 
-  // 스피커 애니메이션 시작
+  // 스피커 애니메이션 시작 (재생 동안 계속 흔들림)
   const stage = document.getElementById('soundStage');
   const icon = document.getElementById('soundIcon');
   stage.classList.add('playing');
   icon.classList.remove('idle');
   icon.classList.add('shaking');
 
-  // 소리 종류별 추가 효과
+  // 소리 종류별 추가 효과 (파동/음표 등)
   runSoundAnim(q.anim);
+}
 
-  setTimeout(() => {
-    btn.classList.remove('playing');
-    document.getElementById('playBtnIcon').textContent = '▶';
-    stage.classList.remove('playing');
-    icon.classList.remove('shaking');
-    icon.classList.add('idle');
-  }, 2000);
+function stopSoundUI() {
+  isPlaying = false;
+  stopAllSounds();   // 실제 소리 정지
+
+  const btn = document.getElementById('playBtn');
+  btn.classList.remove('playing');
+  document.getElementById('playBtnIcon').textContent = '▶';
+  document.getElementById('playBtnText').textContent = '소리 듣기';
+
+  const stage = document.getElementById('soundStage');
+  const icon = document.getElementById('soundIcon');
+  stage.classList.remove('playing');
+  icon.classList.remove('shaking');
+  icon.classList.add('idle');
 }
 
 function runSoundAnim(type) {
@@ -934,23 +999,52 @@ function spawnParticle(stage, char) {
 
 function checkAnswer(idx) {
   if (answered) return;
-  answered = true;
   const q = quizData[currentQ];
   const btns = document.querySelectorAll('.choice-btn');
-  btns.forEach(b => b.disabled = true);
 
   if (idx === q.answer) {
+    answered = true;
+    btns.forEach(b => b.disabled = true);
     btns[idx].classList.add('correct');
     score++;
-    setTimeout(() => showReveal(true), 400);
+    setTimeout(() => showReveal(), 400);
   } else {
+    // 틀림: 다시 들어보세요 팝업 + 다시 풀 기회
     btns[idx].classList.add('wrong');
-    btns[q.answer].classList.add('correct');
-    setTimeout(() => showReveal(false), 600);
+    playWrongSound();
+    showRetryToast();
+    // 잠깐 뒤 틀린 표시 지우고 다시 선택 가능
+    setTimeout(() => {
+      btns[idx].classList.remove('wrong');
+    }, 900);
   }
 }
 
-function showReveal(correct) {
+// "다시 한번 들어보세요" 토스트
+let retryToastTimer = null;
+function showRetryToast() {
+  const toast = document.getElementById('retryToast');
+  toast.classList.add('show');
+  if (retryToastTimer) clearTimeout(retryToastTimer);
+  retryToastTimer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2000);
+}
+
+// 오답 효과음(짧게)
+function playWrongSound() {
+  const ctx = getCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.frequency.value = 300;
+  osc.type = 'sawtooth';
+  gain.gain.setValueAtTime(0.12, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.35);
+  osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
+}
+
+function showReveal() {
   const q = quizData[currentQ];
   const drawing = document.getElementById('revealDrawing');
   const emoji = document.getElementById('revealEmoji');
@@ -958,16 +1052,16 @@ function showReveal(correct) {
   // 아이들 그림 표시 (images/id.png 등). 없으면 이모지로 대체
   loadDrawing(q.id, drawing, emoji);
 
-  document.getElementById('revealCorrectText').textContent = correct ? '🎉 정답이에요!' : '💪 다시 들어볼까요?';
-  document.getElementById('revealCorrectText').style.color = correct ? '#6BCB77' : '#FF8E53';
+  document.getElementById('revealCorrectText').textContent = '🎉 정답이에요!';
+  document.getElementById('revealCorrectText').style.color = '#6BCB77';
   // 의성어 정답을 크게
   document.getElementById('revealSoundWord').textContent = '"' + q.soundLabel + '"';
-  document.getElementById('revealName').textContent = q.placeName + ' 소리';
+  document.getElementById('revealName').textContent = '';
 
   document.getElementById('revealOverlay').classList.add('show');
 
-  if (correct) launchConfetti();
-  playFanfare(correct);
+  launchConfetti();
+  playFanfare(true);
 }
 
 // 아이들 그림 로딩 (없으면 이모지 폴백)
@@ -1063,6 +1157,7 @@ function launchConfetti() {
 
 function nextQuestion() {
   stopAllSounds();   // 넘어갈 때 소리 정지
+  isPlaying = false;
   document.getElementById('revealOverlay').classList.remove('show');
 
   // 진행 도트 업데이트
