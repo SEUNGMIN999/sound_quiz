@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 동네 소리 퀴즈</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sky: #87CEEB;
+    --sun: #FFD93D;
+    --grass: #6BCB77;
+    --road: #FF6B6B;
+    --cloud: #fff;
+    --card-bg: #FFFBF0;
+    --shadow: rgba(0,0,0,0.12);
+  }
+
+  body {
+    font-family: 'Jua', sans-serif;
+    background: linear-gradient(180deg, #87CEEB 0%, #B8E4F7 40%, #D4F5B8 70%, #6BCB77 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+
+  /* 구름 배경 */
+  .cloud {
+    position: fixed;
+    background: white;
+    border-radius: 50px;
+    opacity: 0.85;
+    pointer-events: none;
+  }
+  .cloud::before, .cloud::after {
+    content: '';
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+  }
+  .cloud1 { width:120px; height:40px; top:5%; left:5%; animation: floatCloud 18s linear infinite; }
+  .cloud1::before { width:60px; height:60px; top:-30px; left:15px; }
+  .cloud1::after { width:40px; height:40px; top:-20px; left:55px; }
+  .cloud2 { width:90px; height:30px; top:12%; right:10%; animation: floatCloud 24s linear infinite reverse; }
+  .cloud2::before { width:45px; height:45px; top:-22px; left:10px; }
+  .cloud2::after { width:30px; height:30px; top:-15px; left:45px; }
+
+  @keyframes floatCloud {
+    0% { transform: translateX(-20px); }
+    50% { transform: translateX(20px); }
+    100% { transform: translateX(-20px); }
+  }
+
+  /* 헤더 */
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+  }
+  .header h1 {
+    font-size: clamp(28px, 6vw, 48px);
+    color: #fff;
+    text-shadow: 3px 3px 0 #4A90A4, 5px 5px 10px rgba(0,0,0,0.2);
+    letter-spacing: 2px;
+    line-height: 1.3;
+  }
+  .header .subtitle {
+    font-size: clamp(14px, 3vw, 20px);
+    color: #FFD93D;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    margin-top: 4px;
+  }
+
+  /* 진행 표시 */
+  .progress-bar {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+    z-index: 1;
+    position: relative;
+  }
+  .progress-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+    border: 2px solid white;
+    transition: all 0.3s;
+  }
+  .progress-dot.done { background: #FFD93D; }
+  .progress-dot.current { background: white; transform: scale(1.3); }
+
+  /* 메인 카드 */
+  .quiz-card {
+    background: var(--card-bg);
+    border-radius: 32px;
+    padding: 36px 32px 32px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 8px 32px var(--shadow), 0 2px 0 rgba(255,255,255,0.8) inset;
+    position: relative;
+    z-index: 1;
+    text-align: center;
+  }
+
+  .question-num {
+    font-size: 14px;
+    color: #aaa;
+    margin-bottom: 8px;
+  }
+
+  /* 이모지 아이콘 영역 */
+  .sound-stage {
+    position: relative;
+    height: 130px;
+    margin: 10px 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sound-icon {
+    font-size: 80px;
+    display: block;
+    line-height: 1;
+    position: relative;
+    z-index: 2;
+    transition: transform 0.2s;
+  }
+  .sound-icon.idle { animation: bounce 2s ease-in-out infinite; }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  /* 재생 중 스피커 흔들기 */
+  .sound-icon.shaking { animation: speakerShake 0.4s ease-in-out infinite; }
+  @keyframes speakerShake {
+    0%, 100% { transform: rotate(-8deg) scale(1.1); }
+    50% { transform: rotate(8deg) scale(1.15); }
+  }
+
+  /* 소리 파동 링 */
+  .wave-ring {
+    position: absolute;
+    border: 4px solid #A78BFA;
+    border-radius: 50%;
+    width: 80px; height: 80px;
+    opacity: 0;
+    z-index: 1;
+  }
+  .sound-stage.playing .wave-ring { animation: waveExpand 1.2s ease-out infinite; }
+  .sound-stage.playing .wave-ring:nth-child(2) { animation-delay: 0.4s; }
+  .sound-stage.playing .wave-ring:nth-child(3) { animation-delay: 0.8s; }
+  @keyframes waveExpand {
+    0% { width: 70px; height: 70px; opacity: 0.8; }
+    100% { width: 220px; height: 220px; opacity: 0; }
+  }
+
+  /* 날아다니는 파티클 (음표/별 등) */
+  .particle {
+    position: absolute;
+    font-size: 28px;
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0;
+  }
+  .particle.fly { animation: particleFly 1.4s ease-out forwards; }
+  @keyframes particleFly {
+    0% { transform: translate(0,0) scale(0.3) rotate(0deg); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(1.1) rotate(var(--rot)); opacity: 0; }
+  }
+
+  /* 번쩍이는 빛 (사이렌/구급차용) */
+  .flash-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0;
+  }
+  .flash-overlay.flashing { animation: sirenFlash 0.5s linear 4; }
+  @keyframes sirenFlash {
+    0% { background: rgba(255,80,80,0.25); opacity: 1; }
+    50% { background: rgba(80,120,255,0.25); opacity: 1; }
+    100% { background: rgba(255,80,80,0); opacity: 0; }
+  }
+
+  .question-text {
+    font-size: clamp(20px, 4vw, 26px);
+    color: #333;
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+
+  /* 재생 버튼 */
+  .play-btn {
+    background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 16px 40px;
+    font-family: 'Jua', sans-serif;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(255,107,107,0.4);
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .play-btn:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(255,107,107,0.5); }
+  .play-btn:active { transform: scale(0.97); }
+  .play-btn.playing { background: linear-gradient(135deg, #6BCB77, #4CAF50); }
+
+  /* 보기 버튼들 */
+  .choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .choice-btn {
+    background: white;
+    border: 3px solid #E8E0FF;
+    border-radius: 20px;
+    padding: 22px 10px;
+    font-family: 'Jua', sans-serif;
+    font-size: clamp(20px, 4.5vw, 28px);
+    color: #444;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-shadow: 0 3px 10px var(--shadow);
+    letter-spacing: 1px;
+  }
+  .choice-btn .choice-word { font-size: 1em; }
+  .choice-btn:hover { border-color: #A78BFA; transform: translateY(-3px); box-shadow: 0 6px 16px rgba(167,139,250,0.3); }
+  .choice-btn.correct { border-color: #6BCB77; background: #F0FFF4; animation: correctPop 0.4s ease; }
+  .choice-btn.wrong { border-color: #FF6B6B; background: #FFF0F0; animation: shake 0.4s ease; }
+  .choice-btn:disabled { cursor: default; }
+
+  @keyframes correctPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  /* 정답 공개 오버레이 */
+  .reveal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  .reveal-overlay.show { display: flex; }
+
+  .reveal-card {
+    background: white;
+    border-radius: 36px;
+    padding: 48px 48px 40px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .reveal-drawing {
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
+    border-radius: 24px;
+    margin-bottom: 16px;
+    border: 4px solid #FFE08A;
+    background: #fff;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    animation: spinIn 0.6s ease;
+  }
+  .reveal-place-emoji {
+    font-size: 100px;
+    display: block;
+    margin-bottom: 12px;
+    animation: spinIn 0.6s ease;
+  }
+  @keyframes spinIn {
+    0% { transform: rotate(-20deg) scale(0.5); opacity: 0; }
+    100% { transform: rotate(0deg) scale(1); opacity: 1; }
+  }
+
+  .reveal-correct-text {
+    font-size: 26px;
+    color: #6BCB77;
+    margin-bottom: 12px;
+  }
+  .reveal-sound-word {
+    font-size: 48px;
+    color: #FF6B6B;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+    animation: wordPop 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes wordPop {
+    0% { transform: scale(0.3); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .reveal-place-name {
+    font-size: 26px;
+    color: #888;
+    margin-bottom: 28px;
+  }
+
+  .next-btn {
+    background: linear-gradient(135deg, #A78BFA, #7C3AED);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 16px 48px;
+    font-family: 'Jua', sans-serif;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(124,58,237,0.4);
+    transition: all 0.2s;
+  }
+  .next-btn:hover { transform: scale(1.05); }
+
+  /* 팡파레 별 */
+  .confetti-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 99;
+    overflow: hidden;
+  }
+  .star {
+    position: absolute;
+    font-size: 24px;
+    animation: fallStar 1.2s ease-out forwards;
+    opacity: 1;
+  }
+  @keyframes fallStar {
+    0% { transform: translateY(-20px) scale(0) rotate(0deg); opacity: 1; }
+    80% { opacity: 1; }
+    100% { transform: translateY(100vh) scale(1) rotate(360deg); opacity: 0; }
+  }
+
+  /* 최종 결과 */
+  .result-screen {
+    display: none;
+    text-align: center;
+    z-index: 1;
+    position: relative;
+  }
+  .result-screen.show { display: block; }
+  .result-card {
+    background: var(--card-bg);
+    border-radius: 32px;
+    padding: 48px 32px;
+    max-width: 520px;
+    box-shadow: 0 8px 32px var(--shadow);
+  }
+  .result-title { font-size: 40px; color: #333; margin-bottom: 16px; }
+  .result-emoji { font-size: 80px; display: block; margin-bottom: 16px; }
+  .result-score { font-size: 28px; color: #A78BFA; margin-bottom: 24px; }
+  .restart-btn {
+    background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 16px 48px;
+    font-family: 'Jua', sans-serif;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(255,107,107,0.4);
+    transition: all 0.2s;
+  }
+  .restart-btn:hover { transform: scale(1.05); }
+</style>
+</head>
+<body>
+
+<div class="cloud cloud1"></div>
+<div class="cloud cloud2"></div>
+<div class="flash-overlay" id="flashOverlay"></div>
+
+<div class="header">
+  <h1>🏘️ 우리 동네<br>소리 퀴즈</h1>
+  <div class="subtitle">어떤 소리일까요? 🎵</div>
+</div>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="quiz-card" id="quizCard">
+  <div class="question-num" id="questionNum"></div>
+  <div class="sound-stage" id="soundStage">
+    <div class="wave-ring"></div>
+    <div class="wave-ring"></div>
+    <div class="wave-ring"></div>
+    <span class="sound-icon idle" id="soundIcon">🔊</span>
+  </div>
+  <div class="question-text">이 소리는<br>무슨 소리일까요?</div>
+  <button class="play-btn" id="playBtn" onclick="playSound()">
+    <span id="playBtnIcon">▶</span> 소리 듣기
+  </button>
+  <div class="choices" id="choices"></div>
+</div>
+
+<div class="result-screen" id="resultScreen">
+  <div class="result-card">
+    <span class="result-emoji" id="resultEmoji">🎉</span>
+    <div class="result-title">퀴즈 끝!</div>
+    <div class="result-score" id="resultScore"></div>
+    <button class="restart-btn" onclick="restart()">다시 하기 🔄</button>
+  </div>
+</div>
+
+<!-- 정답 오버레이 -->
+<div class="reveal-overlay" id="revealOverlay">
+  <div class="confetti-container" id="confettiContainer"></div>
+  <div class="reveal-card">
+    <img class="reveal-drawing" id="revealDrawing" alt="" style="display:none;">
+    <span class="reveal-place-emoji" id="revealEmoji"></span>
+    <div class="reveal-correct-text" id="revealCorrectText"></div>
+    <div class="reveal-sound-word" id="revealSoundWord"></div>
+    <div class="reveal-place-name" id="revealName"></div>
+    <button class="next-btn" onclick="nextQuestion()">다음 문제 ➡️</button>
+  </div>
+</div>
+
+<script>
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
+
+// 소리 합성 함수들 (효과음 파일이 없을 때 자동으로 재생되는 폴백)
+const soundMakers = {
+  siren: (ctx) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    let t = ctx.currentTime;
+    for (let i = 0; i < 3; i++) {
+      osc.frequency.setValueAtTime(400, t + i*0.6);
+      osc.frequency.linearRampToValueAtTime(900, t + i*0.6 + 0.3);
+      osc.frequency.linearRampToValueAtTime(400, t + i*0.6 + 0.6);
+    }
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 1.8);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime + 1.6);
+    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.8);
+  },
+  bird: (ctx) => {
+    // 새소리: 짹짹
+    const notes = [600, 800, 700, 900, 650];
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      const t = ctx.currentTime + i * 0.18;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.2, t + 0.04);
+      gain.gain.linearRampToValueAtTime(0, t + 0.14);
+      osc.start(t); osc.stop(t + 0.15);
+    });
+  },
+  eating: (ctx) => {
+    // 냠냠 먹는 소리: 노이즈 버스트
+    for (let i = 0; i < 4; i++) {
+      const bufferSize = ctx.sampleRate * 0.08;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let j = 0; j < bufferSize; j++) data[j] = (Math.random() * 2 - 1) * 0.3;
+      const source = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1500;
+      source.buffer = buffer;
+      source.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+      const t = ctx.currentTime + i * 0.3;
+      gain.gain.setValueAtTime(0.5, t);
+      gain.gain.linearRampToValueAtTime(0, t + 0.08);
+      source.start(t); source.stop(t + 0.1);
+    }
+  },
+  hospital: (ctx) => {
+    // 아이가 아파하는 소리: 흐느끼는 듯한 음정 변화
+    for (let i = 0; i < 3; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      const t = ctx.currentTime + i * 0.6;
+      osc.frequency.setValueAtTime(500, t);
+      osc.frequency.linearRampToValueAtTime(380, t + 0.3);
+      osc.frequency.linearRampToValueAtTime(450, t + 0.5);
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.25, t + 0.1);
+      gain.gain.linearRampToValueAtTime(0, t + 0.5);
+      osc.start(t); osc.stop(t + 0.55);
+    }
+  },
+  scissor: (ctx) => {
+    // 가위 싹둑: 짧은 금속성 노이즈 두 번씩
+    for (let i = 0; i < 4; i++) {
+      const bufferSize = ctx.sampleRate * 0.04;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let j = 0; j < bufferSize; j++) data[j] = (Math.random() * 2 - 1) * 0.4;
+      const source = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 4000;
+      source.buffer = buffer;
+      source.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+      const t = ctx.currentTime + i * 0.35;
+      gain.gain.setValueAtTime(0.6, t);
+      gain.gain.linearRampToValueAtTime(0, t + 0.04);
+      source.start(t); source.stop(t + 0.05);
+    }
+  },
+  school: (ctx) => {
+    // 학교 종소리: 땡땡땡
+    for (let i = 0; i < 3; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = 660;
+      osc.type = 'triangle';
+      const t = ctx.currentTime + i * 0.5;
+      gain.gain.setValueAtTime(0.4, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+      osc.start(t); osc.stop(t + 0.5);
+    }
+  }
+};
+
+// ===== 효과음 파일 재생 =====
+// sounds/ 폴더에 id 이름으로 효과음 파일을 넣으면 자동으로 재생됩니다.
+// 예: sounds/ambulance.mp3, sounds/bird.wav 등
+// 파일이 없거나 재생에 실패하면 위의 합성음(soundMakers)으로 자동 대체됩니다.
+
+const SOUND_FOLDER = 'sounds/';
+const SOUND_EXTS = ['mp3', 'wav', 'ogg', 'm4a']; // 어떤 형식이든 자동 탐색
+const audioCache = {};   // id -> HTMLAudioElement (한번 찾은 파일 기억)
+const fileMissing = {};  // id -> true (파일 없는 게 확인되면 다시 안 찾음)
+
+// 특정 확장자 파일이 실제로 재생 가능한지 확인하며 Audio 객체를 준비
+function tryLoadAudio(id) {
+  return new Promise((resolve) => {
+    let idx = 0;
+    function attempt() {
+      if (idx >= SOUND_EXTS.length) { resolve(null); return; }
+      const url = SOUND_FOLDER + id + '.' + SOUND_EXTS[idx];
+      const audio = new Audio();
+      audio.preload = 'auto';
+      const onOk = () => { cleanup(); resolve(audio); };
+      const onErr = () => { cleanup(); idx++; attempt(); };
+      function cleanup() {
+        audio.removeEventListener('canplaythrough', onOk);
+        audio.removeEventListener('error', onErr);
+      }
+      audio.addEventListener('canplaythrough', onOk, { once: true });
+      audio.addEventListener('error', onErr, { once: true });
+      audio.src = url;
+      audio.load();
+    }
+    attempt();
+  });
+}
+
+// 소리 재생: 파일이 있으면 파일, 없으면 합성음
+async function playQuizSound(id) {
+  // 이미 파일 없는 걸로 확인됐으면 바로 합성음
+  if (fileMissing[id]) { soundMakers[id](getCtx()); return; }
+
+  // 캐시에 있으면 그대로 재생
+  if (audioCache[id]) {
+    const a = audioCache[id];
+    a.currentTime = 0;
+    a.play().catch(() => soundMakers[id](getCtx()));
+    return;
+  }
+
+  // 처음이면 파일 탐색
+  const audio = await tryLoadAudio(id);
+  if (audio) {
+    audioCache[id] = audio;
+    audio.play().catch(() => soundMakers[id](getCtx()));
+  } else {
+    fileMissing[id] = true;       // 다음부턴 합성음 사용
+    soundMakers[id](getCtx());
+  }
+}
+
+const quizData = [
+  {
+    id: 'siren',
+    soundLabel: '삐뽀삐뽀',
+    placeEmoji: '🚑',
+    placeName: '구급차',
+    icon: '🚨',
+    anim: 'flash',
+    choices: [
+      { text: '삐뽀삐뽀' },
+      { text: '멍멍' },
+      { text: '졸졸' },
+      { text: '쩝쩝' },
+    ],
+    answer: 0
+  },
+  {
+    id: 'bird',
+    soundLabel: '짹짹',
+    placeEmoji: '🌳',
+    placeName: '공원',
+    icon: '🐦',
+    anim: 'notes',
+    choices: [
+      { text: '부글부글' },
+      { text: '짹짹' },
+      { text: '빵빵' },
+      { text: '똑똑' },
+    ],
+    answer: 1
+  },
+  {
+    id: 'eating',
+    soundLabel: '후루룩',
+    placeEmoji: '🍽️',
+    placeName: '식당',
+    icon: '🍽️',
+    anim: 'shake',
+    choices: [
+      { text: '땡땡' },
+      { text: '야옹' },
+      { text: '후루룩' },
+      { text: '우르릉' },
+    ],
+    answer: 2
+  },
+  {
+    id: 'hospital',
+    soundLabel: '아야아야',
+    placeEmoji: '🏥',
+    placeName: '병원',
+    icon: '🏥',
+    anim: 'bounce',
+    choices: [
+      { text: '주륵주륵' },
+      { text: '아야아야' },
+      { text: '꿀꿀' },
+      { text: '지글지글' },
+    ],
+    answer: 1
+  },
+  {
+    id: 'scissor',
+    soundLabel: '싹뚝싹뚝',
+    placeEmoji: '💇',
+    placeName: '미용실',
+    icon: '✂️',
+    anim: 'shake',
+    choices: [
+      { text: '싹뚝싹뚝' },
+      { text: '꼬꼬댁' },
+      { text: '쏴아' },
+      { text: '딱딱' },
+    ],
+    answer: 0
+  },
+  {
+    id: 'school',
+    soundLabel: '딩동댕동',
+    placeEmoji: '🏫',
+    placeName: '학교',
+    icon: '🔔',
+    anim: 'notes',
+    choices: [
+      { text: '부르릉' },
+      { text: '엉엉' },
+      { text: '딩동댕동' },
+      { text: '깡깡' },
+    ],
+    answer: 2
+  }
+];
+
+let currentQ = 0;
+let score = 0;
+let answered = false;
+
+function init() {
+  // 진행 표시
+  const pb = document.getElementById('progressBar');
+  pb.innerHTML = '';
+  quizData.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'progress-dot' + (i === 0 ? ' current' : '');
+    dot.id = 'dot' + i;
+    pb.appendChild(dot);
+  });
+  renderQuestion();
+}
+
+function renderQuestion() {
+  answered = false;
+  const q = quizData[currentQ];
+  document.getElementById('questionNum').textContent = `${currentQ + 1} / ${quizData.length}`;
+  const icon = document.getElementById('soundIcon');
+  icon.textContent = '🔊';
+  icon.className = 'sound-icon idle';
+  document.getElementById('soundStage').classList.remove('playing');
+  const playBtn = document.getElementById('playBtn');
+  playBtn.classList.remove('playing');
+  document.getElementById('playBtnIcon').textContent = '▶';
+
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  q.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="choice-word">${c.text}</span>`;
+    btn.onclick = () => checkAnswer(i);
+    choicesEl.appendChild(btn);
+  });
+}
+
+function playSound() {
+  const q = quizData[currentQ];
+  playQuizSound(q.id);   // 파일 있으면 파일, 없으면 합성음 자동
+
+  const btn = document.getElementById('playBtn');
+  btn.classList.add('playing');
+  document.getElementById('playBtnIcon').textContent = '🔊';
+
+  // 스피커 애니메이션 시작
+  const stage = document.getElementById('soundStage');
+  const icon = document.getElementById('soundIcon');
+  stage.classList.add('playing');
+  icon.classList.remove('idle');
+  icon.classList.add('shaking');
+
+  // 소리 종류별 추가 효과
+  runSoundAnim(q.anim);
+
+  setTimeout(() => {
+    btn.classList.remove('playing');
+    document.getElementById('playBtnIcon').textContent = '▶';
+    stage.classList.remove('playing');
+    icon.classList.remove('shaking');
+    icon.classList.add('idle');
+  }, 2000);
+}
+
+function runSoundAnim(type) {
+  const stage = document.getElementById('soundStage');
+
+  if (type === 'flash') {
+    const flash = document.getElementById('flashOverlay');
+    flash.classList.remove('flashing');
+    void flash.offsetWidth; // 리플로우로 애니메이션 재시작
+    flash.classList.add('flashing');
+  }
+
+  if (type === 'notes' || type === 'bounce') {
+    // 음표/하트가 위로 퐁퐁 날아오름
+    const emojis = type === 'notes' ? ['🎵','🎶','♪','♫'] : ['😆','💛','✨','🎈'];
+    let count = 0;
+    const interval = setInterval(() => {
+      if (count >= 8) { clearInterval(interval); return; }
+      spawnParticle(stage, emojis[Math.floor(Math.random()*emojis.length)]);
+      count++;
+    }, 200);
+  }
+
+  if (type === 'shake') {
+    // 좌우로 들썩이는 작은 별
+    let count = 0;
+    const interval = setInterval(() => {
+      if (count >= 6) { clearInterval(interval); return; }
+      spawnParticle(stage, '✨');
+      count++;
+    }, 250);
+  }
+
+  if (type === 'wave') {
+    // 파동만 (스테이지 기본 wave-ring 사용) + 잔잔한 별
+    let count = 0;
+    const interval = setInterval(() => {
+      if (count >= 5) { clearInterval(interval); return; }
+      spawnParticle(stage, '·');
+      count++;
+    }, 280);
+  }
+}
+
+function spawnParticle(stage, char) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  p.textContent = char;
+  // 랜덤 방향
+  const dx = (Math.random() - 0.5) * 200;
+  const dy = -60 - Math.random() * 80;
+  const rot = (Math.random() - 0.5) * 90;
+  p.style.setProperty('--dx', dx + 'px');
+  p.style.setProperty('--dy', dy + 'px');
+  p.style.setProperty('--rot', rot + 'deg');
+  p.style.fontSize = (22 + Math.random() * 16) + 'px';
+  stage.appendChild(p);
+  void p.offsetWidth;
+  p.classList.add('fly');
+  setTimeout(() => p.remove(), 1500);
+}
+
+function checkAnswer(idx) {
+  if (answered) return;
+  answered = true;
+  const q = quizData[currentQ];
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach(b => b.disabled = true);
+
+  if (idx === q.answer) {
+    btns[idx].classList.add('correct');
+    score++;
+    setTimeout(() => showReveal(true), 400);
+  } else {
+    btns[idx].classList.add('wrong');
+    btns[q.answer].classList.add('correct');
+    setTimeout(() => showReveal(false), 600);
+  }
+}
+
+function showReveal(correct) {
+  const q = quizData[currentQ];
+  const drawing = document.getElementById('revealDrawing');
+  const emoji = document.getElementById('revealEmoji');
+
+  // 아이들 그림 표시 (images/id.png 등). 없으면 이모지로 대체
+  loadDrawing(q.id, drawing, emoji);
+
+  document.getElementById('revealCorrectText').textContent = correct ? '🎉 정답이에요!' : '💪 다시 들어볼까요?';
+  document.getElementById('revealCorrectText').style.color = correct ? '#6BCB77' : '#FF8E53';
+  // 의성어 정답을 크게
+  document.getElementById('revealSoundWord').textContent = '"' + q.soundLabel + '"';
+  document.getElementById('revealName').textContent = q.placeName + ' 소리';
+
+  document.getElementById('revealOverlay').classList.add('show');
+
+  if (correct) launchConfetti();
+  playFanfare(correct);
+}
+
+// 아이들 그림 로딩 (없으면 이모지 폴백)
+const IMAGE_FOLDER = 'images/';
+const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+const imageCache = {};   // id -> 찾은 src
+const imageMissing = {}; // id -> true
+
+function loadDrawing(id, imgEl, emojiEl) {
+  const q = quizData.find(x => x.id === id);
+  emojiEl.textContent = q ? q.placeEmoji : '🎵';  // 폴백용 이모지 미리 세팅
+  // 이미 없는 걸로 확인됐으면 이모지
+  if (imageMissing[id]) {
+    imgEl.style.display = 'none';
+    emojiEl.style.display = 'block';
+    return;
+  }
+  // 캐시된 그림 있으면 바로
+  if (imageCache[id]) {
+    imgEl.src = imageCache[id];
+    imgEl.style.display = 'block';
+    emojiEl.style.display = 'none';
+    return;
+  }
+  // 처음이면 탐색
+  let idx = 0;
+  function tryNext() {
+    if (idx >= IMAGE_EXTS.length) {
+      imageMissing[id] = true;
+      imgEl.style.display = 'none';
+      emojiEl.style.display = 'block';
+      return;
+    }
+    const url = IMAGE_FOLDER + id + '.' + IMAGE_EXTS[idx];
+    const test = new Image();
+    test.onload = () => {
+      imageCache[id] = url;
+      imgEl.src = url;
+      imgEl.style.display = 'block';
+      emojiEl.style.display = 'none';
+    };
+    test.onerror = () => { idx++; tryNext(); };
+    test.src = url;
+  }
+  tryNext();
+}
+
+function playFanfare(correct) {
+  const ctx = getCtx();
+  if (correct) {
+    // 정답 팡파레
+    const notes = [523, 659, 784, 1047];
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'triangle';
+      const t = ctx.currentTime + i * 0.12;
+      gain.gain.setValueAtTime(0.2, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      osc.start(t); osc.stop(t + 0.35);
+    });
+  } else {
+    // 오답 소리
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 300;
+    osc.type = 'sawtooth';
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.5);
+  }
+}
+
+function launchConfetti() {
+  const container = document.getElementById('confettiContainer');
+  container.innerHTML = '';
+  const emojis = ['⭐','🌟','✨','🎉','🎊','💛','❤️','💜','🩷','🧡'];
+  for (let i = 0; i < 30; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    star.style.left = Math.random() * 100 + 'vw';
+    star.style.top = '-30px';
+    star.style.fontSize = (20 + Math.random() * 20) + 'px';
+    star.style.animationDelay = Math.random() * 0.5 + 's';
+    star.style.animationDuration = (0.8 + Math.random() * 0.8) + 's';
+    container.appendChild(star);
+  }
+}
+
+function nextQuestion() {
+  document.getElementById('revealOverlay').classList.remove('show');
+
+  // 진행 도트 업데이트
+  document.getElementById('dot' + currentQ).classList.remove('current');
+  document.getElementById('dot' + currentQ).classList.add('done');
+
+  currentQ++;
+
+  if (currentQ >= quizData.length) {
+    showResult();
+  } else {
+    document.getElementById('dot' + currentQ).classList.add('current');
+    renderQuestion();
+  }
+}
+
+function showResult() {
+  document.getElementById('quizCard').style.display = 'none';
+  const rs = document.getElementById('resultScreen');
+  rs.classList.add('show');
+  const pct = score / quizData.length;
+  let emoji = '🌟';
+  let msg = '';
+  if (pct === 1) { emoji = '🏆'; msg = '완벽해요! 우리 동네 소리 박사!'; }
+  else if (pct >= 0.7) { emoji = '🎉'; msg = '정말 잘했어요!'; }
+  else if (pct >= 0.5) { emoji = '😊'; msg = '잘했어요! 다시 해봐요!'; }
+  else { emoji = '💪'; msg = '소리를 더 들어봐요!'; }
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${quizData.length}문제 중 ${score}개 맞혔어요!\n${msg}`;
+  launchConfetti();
+}
+
+function restart() {
+  currentQ = 0; score = 0; answered = false;
+  document.getElementById('quizCard').style.display = '';
+  document.getElementById('resultScreen').classList.remove('show');
+  init();
+}
+
+init();
+</script>
+</body>
+</html>
