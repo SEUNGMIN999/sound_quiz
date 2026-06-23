@@ -66,17 +66,17 @@
     z-index: 1;
   }
   .header h1 {
-    font-size: clamp(28px, 4vw, 44px);
+    font-size: clamp(40px, 6vw, 72px);
     color: #fff;
     text-shadow: 3px 3px 0 #4A90A4, 5px 5px 10px rgba(0,0,0,0.2);
     letter-spacing: 2px;
     line-height: 1.2;
   }
   .header .subtitle {
-    font-size: clamp(14px, 2vw, 20px);
+    font-size: clamp(20px, 3vw, 32px);
     color: #FFD93D;
     text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-    margin-top: 4px;
+    margin-top: 8px;
   }
 
   /* 진행 표시 */
@@ -320,7 +320,7 @@
   }
 
   .question-text {
-    font-size: clamp(24px, 2.5vw, 34px);
+    font-size: clamp(30px, 3.4vw, 46px);
     color: #333;
     margin-bottom: 4px;
     line-height: 1.4;
@@ -528,9 +528,18 @@
     max-width: 520px;
     box-shadow: 0 8px 32px var(--shadow);
   }
-  .result-title { font-size: 40px; color: #333; margin-bottom: 16px; }
-  .result-emoji { font-size: 80px; display: block; margin-bottom: 16px; }
-  .result-score { font-size: 28px; color: #A78BFA; margin-bottom: 24px; }
+  .result-title { font-size: clamp(44px, 5vw, 68px); color: #333; margin-bottom: 16px; }
+  .result-emoji {
+    font-size: clamp(100px, 12vw, 160px);
+    display: block;
+    margin-bottom: 16px;
+    animation: trophyFloat 2.5s ease-in-out infinite;
+  }
+  @keyframes trophyFloat {
+    0%, 100% { transform: translateY(0) rotate(-3deg); }
+    50% { transform: translateY(-18px) rotate(3deg); }
+  }
+  .result-score { font-size: clamp(28px, 3vw, 42px); color: #A78BFA; margin-bottom: 24px; }
   .restart-btn {
     background: linear-gradient(135deg, #FF6B6B, #FF8E53);
     color: white;
@@ -551,6 +560,7 @@
 <div class="cloud cloud1"></div>
 <div class="cloud cloud2"></div>
 <div class="flash-overlay" id="flashOverlay"></div>
+<div class="confetti-container" id="confettiContainer"></div>
 <div class="retry-toast" id="retryToast">🔔 다시 한번 들어보세요!</div>
 
 <!-- 인트로 화면 -->
@@ -626,7 +636,6 @@
 
 <!-- 정답 오버레이 -->
 <div class="reveal-overlay" id="revealOverlay">
-  <div class="confetti-container" id="confettiContainer"></div>
   <div class="reveal-card">
     <div class="reveal-left">
       <img class="reveal-drawing" id="revealDrawing" alt="" style="display:none;">
@@ -636,7 +645,7 @@
       <div class="reveal-correct-text" id="revealCorrectText"></div>
       <div class="reveal-sound-word" id="revealSoundWord"></div>
       <div class="reveal-place-name" id="revealName"></div>
-      <button class="next-btn" onclick="nextQuestion()">다음 문제 ➡️</button>
+      <button class="next-btn" id="nextBtn" onclick="nextQuestion()">다음 문제 ➡️</button>
     </div>
   </div>
 </div>
@@ -906,10 +915,10 @@ const quizData = [
     icon: '🏥',
     anim: 'bounce',
     choices: [
-      { text: '주륵주륵' },
+      { text: '히잉히잉' },
       { text: '아야아야' },
-      { text: '꿀꿀' },
-      { text: '지글지글' },
+      { text: '웅성웅성' },
+      { text: '오물오물' },
     ],
     answer: 1
   },
@@ -922,9 +931,9 @@ const quizData = [
     anim: 'shake',
     choices: [
       { text: '싹뚝싹뚝' },
-      { text: '꼬꼬댁' },
-      { text: '쏴아' },
-      { text: '딱딱' },
+      { text: '찰랑찰랑' },
+      { text: '보글보글' },
+      { text: '재잘재잘' },
     ],
     answer: 0
   },
@@ -936,10 +945,10 @@ const quizData = [
     icon: '🔔',
     anim: 'notes',
     choices: [
-      { text: '부르릉' },
-      { text: '엉엉' },
+      { text: '덜컹덜컹' },
+      { text: '쿵쿵쿵쿵' },
       { text: '딩동댕동' },
-      { text: '깡깡' },
+      { text: '첨벙첨벙' },
     ],
     answer: 2
   }
@@ -1158,6 +1167,14 @@ function showReveal() {
 
   document.getElementById('revealOverlay').classList.add('show');
 
+  // 마지막 문제면 버튼을 '결과 확인'으로
+  const nextBtn = document.getElementById('nextBtn');
+  if (currentQ >= quizData.length - 1) {
+    nextBtn.textContent = '결과 확인 🏆';
+  } else {
+    nextBtn.textContent = '다음 문제 ➡️';
+  }
+
   launchConfetti();
   playFanfare(true);
 }
@@ -1238,7 +1255,6 @@ function playFanfare(correct) {
 
 function launchConfetti() {
   const container = document.getElementById('confettiContainer');
-  container.innerHTML = '';
   const emojis = ['⭐','🌟','✨','🎉','🎊','💛','❤️','💜','🩷','🧡'];
   for (let i = 0; i < 30; i++) {
     const star = document.createElement('div');
@@ -1250,6 +1266,7 @@ function launchConfetti() {
     star.style.animationDelay = Math.random() * 0.5 + 's';
     star.style.animationDuration = (0.8 + Math.random() * 0.8) + 's';
     container.appendChild(star);
+    setTimeout(() => star.remove(), 2200);
   }
 }
 
@@ -1272,6 +1289,7 @@ function nextQuestion() {
   }
 }
 
+let resultConfettiTimer = null;
 function showResult() {
   document.getElementById('quizCard').style.display = 'none';
   const rs = document.getElementById('resultScreen');
@@ -1279,9 +1297,17 @@ function showResult() {
   document.getElementById('resultEmoji').textContent = '🏆';
   document.getElementById('resultScore').textContent = `${quizData.length}문제 중 ${score}개 맞혔어요!`;
   launchConfetti();
+  // 폭죽 계속 반복
+  if (resultConfettiTimer) clearInterval(resultConfettiTimer);
+  resultConfettiTimer = setInterval(launchConfetti, 1200);
+}
+
+function stopResultConfetti() {
+  if (resultConfettiTimer) { clearInterval(resultConfettiTimer); resultConfettiTimer = null; }
 }
 
 function restart() {
+  stopResultConfetti();
   currentQ = 0; score = 0; answered = false;
   document.getElementById('quizCard').style.display = '';
   document.getElementById('resultScreen').classList.remove('show');
